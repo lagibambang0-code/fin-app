@@ -17,7 +17,7 @@ export function TabPage({
 }: TabPageProps) {
   return (
     <>
-      <header className="sticky top-0 z-30 bg-background/85 px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-4 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 bg-background/85 px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-4 backdrop-blur-xl md:px-10 md:pt-8 md:pb-6">
         <p className="text-sm font-medium text-muted-foreground">{subtitle}</p>
         <h1 className="text-2xl font-bold tracking-tight text-balance">
           {title}

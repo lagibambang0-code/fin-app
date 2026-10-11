@@ -26,10 +26,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md md:absolute"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md md:absolute md:max-w-none"
     >
       <div className="border-t bg-card/85 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-xl supports-[backdrop-filter]:bg-card/70">
-        <ul className="grid grid-cols-4 gap-1">
+        <ul className="mx-auto grid max-w-lg grid-cols-4 gap-1">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`)
             return (
