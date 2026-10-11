@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const MONTHS = [
+export const MONTHS = [
   { full: 'Januari', short: 'Jan' },
   { full: 'Februari', short: 'Feb' },
   { full: 'Maret', short: 'Mar' },
@@ -19,29 +19,36 @@ const MONTHS = [
   { full: 'Desember', short: 'Des' },
 ]
 
-type MonthValue = { year: number; month: number }
+export type MonthValue = { year: number; month: number }
 
-function shiftMonth({ year, month }: MonthValue, delta: number): MonthValue {
+export function shiftMonth({ year, month }: MonthValue, delta: number): MonthValue {
   const index = year * 12 + month + delta
   return { year: Math.floor(index / 12), month: ((index % 12) + 12) % 12 }
 }
 
-export function MonthNavigator() {
-  const [today] = useState(() => {
-    const now = new Date()
-    return { year: now.getFullYear(), month: now.getMonth() }
-  })
-  const [selected, setSelected] = useState<MonthValue>(today)
+const iconButton =
+  'flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:size-9'
+
+type MonthNavigatorProps = {
+  value: MonthValue
+  today: MonthValue
+  onChange: (value: MonthValue) => void
+}
+
+export function MonthNavigator({ value, today, onChange }: MonthNavigatorProps) {
   const [open, setOpen] = useState(false)
-  const [pickerYear, setPickerYear] = useState(today.year)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [pickerYear, setPickerYear] = useState(value.year)
+  const popupRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupId = useId()
 
   useEffect(() => {
     if (!open) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
+      const target = event.target as Node
+      if (popupRef.current?.contains(target)) return
+      if (triggerRef.current?.contains(target)) return
+      setOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -58,28 +65,28 @@ export function MonthNavigator() {
   }, [open])
 
   const togglePicker = () => {
-    if (!open) setPickerYear(selected.year)
-    setOpen((value) => !value)
+    if (!open) setPickerYear(value.year)
+    setOpen((current) => !current)
   }
 
   const selectMonth = (month: number) => {
-    setSelected({ year: pickerYear, month })
+    onChange({ year: pickerYear, month })
     setOpen(false)
     triggerRef.current?.focus()
   }
 
-  const label = `${MONTHS[selected.month].short} ${selected.year}`
-  const fullLabel = `${MONTHS[selected.month].full} ${selected.year}`
+  const label = `${MONTHS[value.month].short} ${value.year}`
+  const fullLabel = `${MONTHS[value.month].full} ${value.year}`
 
   return (
-    <div ref={containerRef} className="relative flex items-center gap-1">
+    <div className="relative inline-flex items-center gap-0.5 md:gap-1">
       <button
         type="button"
-        onClick={() => setSelected((value) => shiftMonth(value, -1))}
+        onClick={() => onChange(shiftMonth(value, -1))}
         aria-label="Bulan sebelumnya"
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={iconButton}
       >
-        <ChevronLeft aria-hidden="true" className="size-5" />
+        <ChevronLeft aria-hidden="true" className="size-4 md:size-5" />
       </button>
 
       <button
@@ -91,7 +98,7 @@ export function MonthNavigator() {
         aria-controls={open ? popupId : undefined}
         aria-label={`Pilih bulan, saat ini ${fullLabel}`}
         className={cn(
-          'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xl font-bold tracking-tight tabular-nums transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-2xl',
+          'flex items-center gap-1 rounded-full px-2.5 py-1 text-base font-semibold tracking-tight tabular-nums transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-1.5 md:px-3 md:py-1.5 md:text-xl md:font-bold',
           open && 'bg-secondary',
         )}
       >
@@ -99,7 +106,7 @@ export function MonthNavigator() {
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            'size-4 text-muted-foreground transition-transform duration-200',
+            'size-3.5 text-muted-foreground transition-transform duration-200 md:size-4',
             open && 'rotate-180',
           )}
         />
@@ -107,48 +114,47 @@ export function MonthNavigator() {
 
       <button
         type="button"
-        onClick={() => setSelected((value) => shiftMonth(value, 1))}
+        onClick={() => onChange(shiftMonth(value, 1))}
         aria-label="Bulan selanjutnya"
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={iconButton}
       >
-        <ChevronRight aria-hidden="true" className="size-5" />
+        <ChevronRight aria-hidden="true" className="size-4 md:size-5" />
       </button>
 
       {open && (
         <div
+          ref={popupRef}
           id={popupId}
           role="dialog"
           aria-label="Pilih bulan dan tahun"
-          className="absolute top-full left-0 z-40 mt-2 w-[min(20rem,calc(100vw-2.5rem))] rounded-2xl border bg-popover p-3 text-popover-foreground shadow-xl animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150 md:w-[30rem] md:p-4"
+          className="absolute top-full left-0 z-40 mt-2 w-[min(18rem,calc(100vw-2.5rem))] rounded-2xl border bg-popover p-2.5 text-popover-foreground shadow-xl animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150 md:w-[30rem] md:p-4"
         >
-          <div className="mb-3 flex items-center justify-between border-b pb-3">
+          <div className="mb-2.5 flex items-center justify-between border-b pb-2.5 md:mb-3 md:pb-3">
             <button
               type="button"
               onClick={() => setPickerYear((year) => year - 1)}
               aria-label="Tahun sebelumnya"
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={iconButton}
             >
-              <ChevronLeft aria-hidden="true" className="size-5" />
+              <ChevronLeft aria-hidden="true" className="size-4 md:size-5" />
             </button>
-            <p className="text-base font-semibold tabular-nums" aria-live="polite">
+            <p className="text-sm font-semibold tabular-nums md:text-base" aria-live="polite">
               {pickerYear}
             </p>
             <button
               type="button"
               onClick={() => setPickerYear((year) => year + 1)}
               aria-label="Tahun selanjutnya"
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={iconButton}
             >
-              <ChevronRight aria-hidden="true" className="size-5" />
+              <ChevronRight aria-hidden="true" className="size-4 md:size-5" />
             </button>
           </div>
 
-          <ul className="grid grid-cols-4 gap-1.5 md:gap-2">
+          <ul className="grid grid-cols-4 gap-1 md:gap-2">
             {MONTHS.map((month, index) => {
-              const isSelected =
-                selected.year === pickerYear && selected.month === index
-              const isCurrent =
-                today.year === pickerYear && today.month === index
+              const isSelected = value.year === pickerYear && value.month === index
+              const isCurrent = today.year === pickerYear && today.month === index
               return (
                 <li key={month.full}>
                   <button
@@ -157,7 +163,7 @@ export function MonthNavigator() {
                     aria-pressed={isSelected}
                     aria-label={`${month.full} ${pickerYear}`}
                     className={cn(
-                      'relative flex h-11 w-full items-center justify-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'relative flex h-10 w-full items-center justify-center rounded-xl text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-11 md:text-sm',
                       isSelected
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'hover:bg-secondary',
@@ -169,7 +175,7 @@ export function MonthNavigator() {
                     {isCurrent && !isSelected && (
                       <span
                         aria-hidden="true"
-                        className="absolute bottom-1.5 size-1 rounded-full bg-primary"
+                        className="absolute bottom-1 size-1 rounded-full bg-primary md:bottom-1.5"
                       />
                     )}
                   </button>
